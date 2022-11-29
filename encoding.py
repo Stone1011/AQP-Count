@@ -189,6 +189,6 @@ X = Xtemp[2]
 Y = generateY(queries)
 print('Done')
 
-# Test Point D
+# Test Point D -- Ok
 Xpred = generatePredX(sigmaConn, sigmaCond, predQueries)
 print('Done')
