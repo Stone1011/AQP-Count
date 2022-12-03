@@ -60,11 +60,8 @@ model = XGBRegressor(**other_params)
 optimized_GBM = GridSearchCV(estimator=model, param_grid=cv_params, scoring='neg_mean_squared_error', cv=5, verbose=1, n_jobs=4)
 optimized_GBM.fit(X_train, Y_train)
 evalute_result = optimized_GBM.cv_results_['mean_test_score']
-print('每轮迭代运行结果:{0}'.format(evalute_result))
-print('参数的最佳取值：{0}'.format(optimized_GBM.best_params_))
-print('最佳模型得分:{0}'.format(optimized_GBM.best_score_))
-
-
-
+print('Each iteration result: {0}'.format(evalute_result))
+print('The best argument values: {0}'.format(optimized_GBM.best_params_))
+print('The best model score: {0}'.format(optimized_GBM.best_score_))
 
 
