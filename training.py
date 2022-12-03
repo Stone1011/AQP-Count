@@ -1,9 +1,10 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, accuracy_score
+from sklearn.metrics import mean_squared_log_error, accuracy_score, mean_squared_error
 from xgboost import XGBRegressor, XGBClassifier
 import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import MinMaxScaler
 from encoding import *
 
 
@@ -31,29 +32,34 @@ print('Done')
 Xpred = generatePredX(sigmaConn, sigmaCond, predQueries)
 print('Done')
 
-x = X
+scaler = MinMaxScaler(feature_range=(0,1))
+x = scaler.fit_transform(X)
 y = Y
 
 X_train, X_validation, Y_train, Y_validation = train_test_split(x, y, test_size = 0.2, random_state = 0)
-# other_params = {'learning_rate': 0.05, 'n_estimators': 2000, 'max_depth': 9, 'min_child_weight': 3, 'seed': 0,
-#                 'subsample': 0.9, 'colsample_bytree': 0.9, 'gamma': 0, 'reg_alpha': 0, 'reg_lambda': 1}
+
+
+# other_params = {'learning_rate': 0.01, 'n_estimators': 8000, 'max_depth': 13, 'min_child_weight': 3, 'seed': 1234,
+#                 'subsample': 0.9, 'colsample_bytree': 0.9, 'gamma': 0, 'reg_alpha': 0, 'reg_lambda': 1, 'objective': 'reg:squaredlogerror'}
+#
 #
 # model = XGBRegressor(**other_params)
 # model.fit(X_train, Y_train)
 # ypred = model.predict(X_validation)
-# print('MSE of prediction on boston dataset:', mean_squared_error(Y_validation, ypred))
+# print(ypred)
+# print('MSLE of prediction on boston dataset:', mean_squared_log_error(Y_validation, ypred))
 # print('\n')
 
 
-cv_params = {'n_estimators': [6000,7000,8000]} #2000 is the best
-# # cv_params = {'max_depth': [4,5,6,7,8,9]} #9 is the best
+cv_params = {'n_estimators': [6000,7000,8000, 9000, 1000]} #9000 is the best
+cv_params = {'max_depth': [4,5,6,7,8,9], 'min_child_weight': [1,2,3,4,5,6]} #,4 is the best
 # # cv_params = {'min_child_weight': [1,2,3,4,5,6]} #3 is the best
 # # cv_params = {'gamma': [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7]} #0 is the best
 # # cv_params = {'subsample': [0.6, 0.7, 0.9, 0.9], 'colsample_bytree': [0.6, 0.7, 0.9, 0.9]} #both 0.9 is the best
 # cv_params = {'learning_rate': [0.01, 0.05, 0.07, 0.1, 0.2]} #0.05 is the best
 #
 #
-other_params = {'learning_rate': 0.05, 'n_estimators': 6000, 'max_depth': 9, 'min_child_weight': 3, 'seed': 0,
+other_params = {'learning_rate': 0.05, 'n_estimators': 9000, 'max_depth': 9, 'min_child_weight': 4, 'seed': 0,
                 'subsample': 0.9, 'colsample_bytree': 0.9, 'gamma': 0, 'reg_alpha': 0, 'reg_lambda': 1}
 
 model = XGBRegressor(**other_params)
