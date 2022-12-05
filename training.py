@@ -6,6 +6,7 @@ from xgboost import XGBRegressor, XGBClassifier
 import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 from encoding import *
 
 from sklearn.neighbors import KNeighborsClassifier
@@ -37,11 +38,12 @@ print('Done')
 Xpred = generatePredX(sigmaConn, sigmaCond, predQueries)
 print('Done')
 
-scaler = MinMaxScaler(feature_range=(0,1))
+scaler = StandardScaler()
 x = scaler.fit_transform(X)
+x = X
 y = Y
 
-X_train, X_validation, Y_train, Y_validation = train_test_split(x, y, test_size = 0.2, random_state = 0)
+X_train, X_validation, Y_train, Y_validation = train_test_split(x, y, test_size = 0.01, random_state = 1234)
 
 #XGBOOST
 # other_params = {'learning_rate': 0.05, 'n_estimators':9000, 'max_depth': 9, 'min_child_weight': 4, 'seed': 0,
@@ -182,21 +184,37 @@ X_train, X_validation, Y_train, Y_validation = train_test_split(x, y, test_size 
 
 # MLP network
 # not as good as forest
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score
-# import matplotlib.pyplot as plt
-import numpy as np
-from sklearn.neural_network import MLPRegressor
-
-model = MLPRegressor()
-model.fit(X_train,Y_train)
-K_pred = model.predict(X_validation)
-score = r2_score(Y_validation, K_pred)
+# import pandas as pd
+# from sklearn.model_selection import train_test_split
+# from sklearn.metrics import r2_score
+# # import matplotlib.pyplot as plt
+# import numpy as np
+# from sklearn.neural_network import MLPRegressor
+#
+# model = MLPRegressor()
+# model.fit(X_train,Y_train)
+# K_pred = model.predict(X_validation)
+# score = r2_score(Y_validation, K_pred)
  #需要用测试数据检验这个模型好不好
 
 
+# adaboost
 
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import AdaBoostRegressor
+
+decisionTree1 = DecisionTreeClassifier()
+
+decisionTree2 = DecisionTreeRegressor(max_leaf_nodes=10000000)
+# model = AdaBoostClassifier(base_estimator=decisionTree1, n_estimators=50, learning_rate=0.05, random_state=0)
+model = AdaBoostRegressor(base_estimator=decisionTree2, n_estimators=200, learning_rate=0.1, random_state=0, loss='square')
+
+
+# model = AdaBoostRegressor(n_estimators=1000)
+# model = XGBRegressor(n_estimators=1000)
+model.fit(X_train,Y_train)
 
 
 
@@ -204,9 +222,9 @@ ypred = model.predict(X_validation)
 print('MSLE of prediction on boston dataset:', mean_squared_log_error(Y_validation, ypred))
 print('\n')
 
-scaler = MinMaxScaler(feature_range=(0,1))
-Xpred_stad = scaler.fit_transform(Xpred)
-ypred2 = model.predict(Xpred_stad)
+# scaler = MinMaxScaler(feature_range=(0,1))
+# Xpred_stad = scaler.fit_transform(Xpred)
+ypred2 = model.predict(Xpred)
 list = []
 for i in range (2000):
     templist = [i ,ypred2[i]]
