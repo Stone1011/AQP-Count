@@ -151,3 +151,4 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 handout/~$查询规模预测.pptx
+Cardinality-Estimation(1).ipynb
