@@ -3,11 +3,14 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_log_error, accuracy_score, mean_squared_error
 from xgboost import XGBRegressor, XGBClassifier
+import lightgbm as lgb
+import xgboost as xgb
 import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 from encoding import *
+import sklearn
 
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import KNeighborsRegressor
@@ -205,26 +208,84 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import AdaBoostRegressor
 
-decisionTree1 = DecisionTreeClassifier()
+# decisionTree1 = DecisionTreeClassifier(max_leaf_nodes=1000)
+# decisionTreeRegressor = DecisionTreeRegressor()
+#
+# # model = AdaBoostClassifier(base_estimator=decisionTree1, n_estimators=200, learning_rate=0.5, random_state=1)
+# model = AdaBoostRegressor(base_estimator=decisionTreeRegressor, n_estimators=100, learning_rate=0.08, random_state=0, loss='square') # Todo: n_estimators and learning_rate can be further adjusted, loss can be 'square-log'?
+#
+# cv_params = {'n_estimators': [20, 40, 80, 100, 200,400,800], 'learning_rate': [0.01, 0.02, 0.04, 0.08, 0.1, 0.12, 0.15]} #9000 is the best
+# # cv_params = {'max_depth': [4,5,6,7,8,9], 'min_child_weight': [1,2,3,4,5,6]} #9,4 is the best
+# # # cv_params = {'gamma': [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7]} #0 is the best
+# # # cv_params = {'subsample': [0.6, 0.7, 0.9, 0.9], 'colsample_bytree': [0.6, 0.7, 0.9, 0.9]} #both 0.9 is the best
+# # cv_params = {'learning_rate': [0.01, 0.05, 0.07, 0.1, 0.2]} #0.05 is the best
+# #
+# #
+#
+# # The best argument values: {'learning_rate': 0.1, 'n_estimators': 200}
+#
+# # Why all loss func here are square while what we need is square-log
+#
+# # other_params = {'base_estimator': decisionTreeRegressor, 'n_estimators': 200, 'learning_rate': 0.1, 'loss': 'square'} #this one dont have a log
+# #
+# # model = AdaBoostRegressor(**other_params)
+# # optimized_GBM = GridSearchCV(estimator=model, param_grid=cv_params, scoring='neg_mean_squared_log_error', cv=5, verbose=1, n_jobs=-1) # i will check this one
+# # optimized_GBM.fit(X_train, Y_train)
+# # evalute_result = optimized_GBM.cv_results_['mean_test_score']
+# # print('Each iteration result: {0}'.format(evalute_result))
+# # print('The best argument values: {0}'.format(optimized_GBM.best_params_))
+# # print('The best model score: {0}'.format(optimized_GBM.best_score_))
+#
+# # model = AdaBoostRegressor(n_estimators=1000)
+# # model = XGBRegressor(n_estimators=1000)
+# model.fit(X_train,Y_train)
 
-decisionTree2 = DecisionTreeRegressor(max_leaf_nodes=10000000)
-# model = AdaBoostClassifier(base_estimator=decisionTree1, n_estimators=50, learning_rate=0.05, random_state=0)
-model = AdaBoostRegressor(base_estimator=decisionTree2, n_estimators=200, learning_rate=0.1, random_state=0, loss='square')
+# create dataset for lightgbm
+# train_labels = [math.log(i)+1 for i in train_labels]
+# print(len(train_labels))
+import math
+# print(train_labels)
+# X_log = [math.log(i)+1 for i in X_train]
+dtrain = xgb.DMatrix(X_train, Y_train)
+deval = xgb.DMatrix(X_validation, Y_validation)
+watchlist = [(deval, 'eval')]
+params = {'objective':'multi:softmax','tree_method':'hist', 'grow_policy':'lossguide', 'learning_rate': 0.05}
+clf = xgb.train(params, dtrain, 500, watchlist, early_stopping_rounds=200)
+
+# Xpred_stad = scaler.fit_transform(Xpred)
+ypred2= clf.predict(xgb.DMatrix(Xpred))
+# Objective candidate: survival:aft
+# Objective candidate: binary:hinge
+# Objective candidate: multi:softmax
+# Objective candidate: multi:softprob
+# Objective candidate: rank:pairwise
+# Objective candidate: rank:ndcg
+# Objective candidate: rank:map
+# Objective candidate: reg:pseudohubererror
+# Objective candidate: binary:logistic
+# Objective candidate: binary:logitraw
+# Objective candidate: reg:linear
+# Objective candidate: count:poisson
+# Objective candidate: survival:cox
+# Objective candidate: reg:gamma
+# Objective candidate: reg:tweedie
+# Objective candidate: reg:squarederror
+# Objective candidate: reg:squaredlogerror
+# Objective candidate: reg:logistic
 
 
-# model = AdaBoostRegressor(n_estimators=1000)
-# model = XGBRegressor(n_estimators=1000)
-model.fit(X_train,Y_train)
+# ypred2 = np.exp(yp) - 1
 
-
-
-ypred = model.predict(X_validation)
-print('MSLE of prediction on boston dataset:', mean_squared_log_error(Y_validation, ypred))
-print('\n')
+print(ypred2)
+# ypred = model.predict(X_validation)
+# print('MSLE of prediction on boston dataset:', mean_squared_log_error(Y_validation, ypred))
+# print('\n')
 
 # scaler = MinMaxScaler(feature_range=(0,1))
 # Xpred_stad = scaler.fit_transform(Xpred)
-ypred2 = model.predict(Xpred)
+# Xpred = scaler.fit_transform(Xpred)
+
+# ypred2 = model.predict(Xpred)
 list = []
 for i in range (2000):
     templist = [i ,ypred2[i]]

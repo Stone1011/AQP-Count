@@ -8,6 +8,13 @@ class Query:
     condition: an dictionary, tableName.keyName_[lb/ub] -> Value
     result: an integer, -1 if none
     """
+    path = 'handout/column_min_max_vals.csv'
+    limit = pd.read_csv(path)
+    limits = {}
+    for i in range(limit.shape[0]):
+        temp = limit.iloc[i]
+        limits[temp['name']] = [temp['min'], temp['max']]
+
     def __init__(self, str):
         temp = str.split('#')
         if len(temp) < 3:
@@ -36,28 +43,34 @@ class Query:
         arr = []
         for each in temp:
             a, b = each.split('=')
-            aTable, aKey = a.split('.')
-            bTable, bKey = b.split('.')
-            if aTable in self.tables:
-                aTable = self.tables[aTable]
-            if bTable in self.tables:
-                bTable = self.tables[bTable]
-            a = aTable + '.' + aKey
-            b = bTable + '.' + bKey
+            # aTable, aKey = a.split('.')
+            # bTable, bKey = b.split('.')
+            # if aTable in self.tables:
+            #     aTable = self.tables[aTable]
+            # if bTable in self.tables:
+            #     bTable = self.tables[bTable]
+            # a = aTable + '.' + aKey
+            # b = bTable + '.' + bKey
             if a < b:
                 arr.append([a, b])
             else:
                 arr.append([b, a])
         return arr
 
+    def normalize(self, name, value):
+        """
+        MinMaxNormalization
+        """
+        return float(value - self.limits[name][0]) / float(self.limits[name][1] - self.limits[name][0])
+
     def handleCondition(self, str):
         temp = str.split(',')
         # Change all alias to original names
-        for i in range(len(temp)):
-            ttemp = temp[i].split('.')
-            if len(ttemp) == 2:
-                if ttemp[0] in self.tables:
-                    temp[i] = self.tables[ttemp[0]] + '.' + ttemp[1]
+        # for i in range(len(temp)):
+        #     ttemp = temp[i].split('.')
+        #     if len(ttemp) == 2:
+        #         if ttemp[0] in self.tables:
+        #             temp[i] = self.tables[ttemp[0]] + '.' + ttemp[1]
 
         i = 0
         dic = {}
@@ -67,12 +80,12 @@ class Query:
             c = temp[i+2]
             # switch(operator)
             if b == '=':
-                dic[a + '_lb'] = int(c)
-                dic[a + '_ub'] = int(c)
+                dic[a + '_lb'] = self.normalize(a, int(c))
+                dic[a + '_ub'] = self.normalize(a, int(c))
             elif b == '<':
-                dic[a + '_ub'] = int(c)
+                dic[a + '_ub'] = self.normalize(a, int(c))
             elif b == '>':
-                dic[a + '_lb'] = int(c)
+                dic[a + '_lb'] = self.normalize(a, int(c))
             i += 3
         return dic
 
