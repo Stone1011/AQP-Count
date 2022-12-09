@@ -109,13 +109,17 @@ def coupleToStr(couple):
     """
     return couple[0] + ';' + couple[1]
 
-def generateOneX(sigmaConn, sigmaCond, query):
+def generateOneX(sigmaConn, sigmaCond, sigmaTable, query):
     """
     Transform a query to a Vector
-    query => [connection:condition]
+    query => [table:connection:condition]
     """
+    tables = [0 for i in range(len(sigmaTable.keys()))]
     connections = [0 for i in range(len(sigmaConn.keys()))]
     conditions = [0 for i in range(len(sigmaCond.keys()))]
+
+    for tab in query.tables.keys():
+        tables[sigmaTable[tab]] = 1
 
     for conn in query.connect:
         connections[sigmaConn[coupleToStr(conn)]] = 1
@@ -123,12 +127,12 @@ def generateOneX(sigmaConn, sigmaCond, query):
     for cond in query.condition.keys():
         conditions[sigmaCond[cond]] = query.condition[cond]
 
-    return connections + conditions
+    return tables + connections + conditions
 
 def generateX(queries):
     """
     Input: a list of Query objects
-    Output: sigmaConn, sigmaCond, X
+    Output: sigmaConn, sigmaCond, sigmaTable, X
     """
     
     # First, get the One-Heat encoding dictionary for connections
@@ -153,6 +157,17 @@ def generateX(queries):
     for i in range(len(sigmaCondArr)):
         sigmaCond[sigmaCondArr[i]] = i
 
+    # Third, get the One-Heat encoding dictionary for tables
+    sigmaTableArr = []
+    for each in queries:
+        for key in each.tables.keys():
+            if key not in sigmaTableArr:
+                sigmaTableArr.append(key)
+    sorted(sigmaTableArr)
+    sigmaTable = {}
+    for i in range(len(sigmaTableArr)):
+        sigmaTable[sigmaTableArr[i]] = i
+
     # For Debug
     # print("sigmaConn:")
     # print(sigmaConn)
@@ -162,14 +177,14 @@ def generateX(queries):
     # generate code for each element
     X = []
     for each in queries:
-        X.append(generateOneX(sigmaConn, sigmaCond, each))
+        X.append(generateOneX(sigmaConn, sigmaCond, sigmaTable, each))
 
-    return [sigmaConn, sigmaCond, X]
+    return [sigmaConn, sigmaCond, sigmaTable, X]
 
-def generatePredX(sigmaConn, sigmaCond, queries):
+def generatePredX(sigmaConn, sigmaCond, sigmaTable, queries):
     X = []
     for each in queries:
-        X.append(generateOneX(sigmaConn, sigmaCond, each))
+        X.append(generateOneX(sigmaConn, sigmaCond, sigmaTable, each))
     return X
 
 def generateY(queries):
@@ -198,10 +213,11 @@ with open('handout/test_without_label.csv') as file:
 Xtemp = generateX(queries)
 sigmaConn = Xtemp[0]
 sigmaCond = Xtemp[1]
-X = Xtemp[2]
+sigmaTable = Xtemp[2]
+X = Xtemp[3]
 Y = generateY(queries)
 print('Done')
 
 # Test Point D -- Ok
-Xpred = generatePredX(sigmaConn, sigmaCond, predQueries)
+Xpred = generatePredX(sigmaConn, sigmaCond, sigmaTable, predQueries)
 print('Done')
