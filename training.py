@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_log_error, accuracy_score, mean_squared_error
 from xgboost import XGBRegressor, XGBClassifier
-import lightgbm as lgb
+# import lightgbm as lgb
 import xgboost as xgb
 # import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
@@ -11,10 +11,16 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 from encoding import *
 import sklearn
-
+import math
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neighbors import RadiusNeighborsRegressor
+
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import AdaBoostRegressor
+
 
 
 queries = []
@@ -33,27 +39,36 @@ with open('handout/test_without_label.csv') as file:
 Xtemp = generateX(queries)
 sigmaConn = Xtemp[0]
 sigmaCond = Xtemp[1]
-X = Xtemp[2]
+sigmaTable= Xtemp[2]
+X = Xtemp[3]
 Y = generateY(queries)
 print('Done')
 
 # Test Point D -- Ok
-Xpred = generatePredX(sigmaConn, sigmaCond, predQueries)
+Xpred = generatePredX(sigmaConn, sigmaCond, sigmaTable, predQueries)
 print('Done')
 
-scaler = StandardScaler()
-x = scaler.fit_transform(X)
-x = X
-y = Y
+# scaler = StandardScaler()
+# x = scaler.fit_transform(X)
+# Xpred = scaler.fit_transform(Xpred)
 
-X_train, X_validation, Y_train, Y_validation = train_test_split(x, y, test_size = 0.01, random_state = 1234)
+logY = []
+for y in Y:
+    logY.append(math.log(y+1))
+
+x = X
+# y = Y
+
+# 1.065037667852871
+X_train, X_validation, Y_train, Y_validation = train_test_split(x, logY, test_size = 0.005, random_state = 1234)
 
 #XGBOOST
-# other_params = {'learning_rate': 0.05, 'n_estimators':9000, 'max_depth': 9, 'min_child_weight': 4, 'seed': 0,
+# other_params = {'learning_rate': 0.05, 'n_estimators':800, 'max_depth': 9, 'min_child_weight': 4, 'seed': 0,
 #                 'subsample': 0.9, 'colsample_bytree': 0.9, 'gamma': 0, 'reg_alpha': 0, 'reg_lambda': 1, 'objective': 'reg:squaredlogerror'}
-#
-#
+
+
 # model = XGBRegressor(**other_params)
+# model = XGBRegressor(learning_rate = 0.08, objective='reg:squaredlogerror')
 # model.fit(X_train, Y_train)
 # ypred = model.predict(X_validation)
 # print(Y_validation)
@@ -203,16 +218,12 @@ X_train, X_validation, Y_train, Y_validation = train_test_split(x, y, test_size 
 
 # adaboost
 
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import AdaBoostRegressor
 
 # decisionTree1 = DecisionTreeClassifier(max_leaf_nodes=1000)
 # decisionTreeRegressor = DecisionTreeRegressor()
 #
-# # model = AdaBoostClassifier(base_estimator=decisionTree1, n_estimators=200, learning_rate=0.5, random_state=1)
-# model = AdaBoostRegressor(base_estimator=decisionTreeRegressor, n_estimators=100, learning_rate=0.08, random_state=0, loss='square') # Todo: n_estimators and learning_rate can be further adjusted, loss can be 'square-log'?
+# model = AdaBoostClassifier(base_estimator=decisionTree1, n_estimators=200, learning_rate=0.5, random_state=1)
+# model = AdaBoostRegressor(base_estimator=decisionTreeRegressor, n_estimators=300, learning_rate=0.08, random_state=0, loss='square') # Todo: n_estimators and learning_rate can be further adjusted, loss can be 'square-log'?
 #
 # cv_params = {'n_estimators': [20, 40, 80, 100, 200,400,800], 'learning_rate': [0.01, 0.02, 0.04, 0.08, 0.1, 0.12, 0.15]} #9000 is the best
 # # cv_params = {'max_depth': [4,5,6,7,8,9], 'min_child_weight': [1,2,3,4,5,6]} #9,4 is the best
@@ -243,17 +254,17 @@ from sklearn.ensemble import AdaBoostRegressor
 # create dataset for lightgbm
 # train_labels = [math.log(i)+1 for i in train_labels]
 # print(len(train_labels))
-import math
-# print(train_labels)
-# X_log = [math.log(i)+1 for i in X_train]
-dtrain = xgb.DMatrix(X_train, Y_train)
-deval = xgb.DMatrix(X_validation, Y_validation)
-watchlist = [(deval, 'eval')]
-params = {'objective':'multi:softmax','tree_method':'hist', 'grow_policy':'lossguide', 'learning_rate': 0.05}
-clf = xgb.train(params, dtrain, 500, watchlist, early_stopping_rounds=200)
+# import math
+# # print(train_labels)
+# # X_log = [math.log(i)+1 for i in X_train]
+# dtrain = xgb.DMatrix(X_train, Y_train)
+# deval = xgb.DMatrix(X_validation, Y_validation)
+# watchlist = [(deval, 'eval')]
+# params = {'objective':'multi:softmax','tree_method':'hist', 'grow_policy':'lossguide', 'learning_rate': 0.05}
+# clf = xgb.train(params, dtrain, 500, watchlist, early_stopping_rounds=200)
 
 # Xpred_stad = scaler.fit_transform(Xpred)
-ypred2= clf.predict(xgb.DMatrix(Xpred))
+# ypred2= clf.predict(xgb.DMatrix(Xpred))
 # Objective candidate: survival:aft
 # Objective candidate: binary:hinge
 # Objective candidate: multi:softmax
@@ -276,19 +287,60 @@ ypred2= clf.predict(xgb.DMatrix(Xpred))
 
 # ypred2 = np.exp(yp) - 1
 
-print(ypred2)
-# ypred = model.predict(X_validation)
-# print('MSLE of prediction on boston dataset:', mean_squared_log_error(Y_validation, ypred))
-# print('\n')
-
+# print(ypred2)
 # scaler = MinMaxScaler(feature_range=(0,1))
 # Xpred_stad = scaler.fit_transform(Xpred)
 # Xpred = scaler.fit_transform(Xpred)
 
-# ypred2 = model.predict(Xpred)
+
+
+
+
+#2022.12.9
+##xgboost
+
+###xgboost 调参
+# # cv_params = {'n_estimators': [500,600,700,800]} #800 is the best
+# # cv_params = {'max_depth': [4,5,6,7,8,9], 'min_child_weight': [1,2,3,4,5,6]} #9,4 is the best
+# # cv_params = {'gamma': [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7]} #0 is the best
+# # cv_params = {'subsample': [0.6, 0.7, 0.9, 0.9], 'colsample_bytree': [0.6, 0.7, 0.9, 0.9]} #both 0.9 is the best
+# cv_params = {'learning_rate': [0.2,0.25,0.3,0.5]} #0.05 is the best
+# other_params = {'n_estimators':1000,'learning_rate': 0.2}
+#
+# optimized_GBM = GridSearchCV(estimator=model, param_grid=cv_params, scoring='r2', cv=5, verbose=1, n_jobs=4)
+# optimized_GBM.fit(X_train, Y_train)
+# evalute_result = optimized_GBM.cv_results_['mean_test_score']
+# print('Each iteration result: {0}'.format(evalute_result))
+# print('The best argument values: {0}'.format(optimized_GBM.best_params_))
+# print('The best model score: {0}'.format(optimized_GBM.best_score_))
+#
+#
+# model = XGBRegressor(**other_params)
+# model.fit(X_train, Y_train)
+
+
+#1.25
+# model = XGBRegressor(n_estimators =300, learning_rate = 0.08)
+# model.fit(X_train, Y_train)
+
+# 1.1017022403942553
+model = XGBRegressor(n_estimators =225, learning_rate = 0.18, max_depth=5, min_child_weight=1,subsample=1, gamma=0.2)
+model.fit(X_train, Y_train)
+
+#这个没有xgboost好
+# decisionTreeRegressor = DecisionTreeRegressor()
+# model = AdaBoostRegressor(base_estimator=decisionTreeRegressor, n_estimators=200, learning_rate=0.1, random_state=0, loss='square') # Todo: n_estimators and learning_rate can be further adjusted, loss can be 'square-log'?
+# model.fit(X_train,Y_train)
+
+
+# ypred = model.predict(X_validation)
+# print('MSLE of prediction on boston dataset:', mean_squared_log_error(Y_validation, ypred))
+# print('\n')
+
+ypred2 = model.predict(Xpred)
 list = []
 for i in range (2000):
-    templist = [i ,ypred2[i]]
+    templist = [i ,math.exp(ypred2[i])]
     list.append(templist)
 print(ypred2.shape)
 
