@@ -14,19 +14,20 @@ def wait(sec):
     time.sleep(sec)
 
 def post(filePath, times, wait_time):
-    file = {
-        'input_file': open(filePath, 'rb')
-    }
+    with open(filePath, 'rb') as csv:
+        file = {
+            'input_file': csv
+        }
 
-    for i in range(times):
-        try:
-            r = requests.post(url, files=file)
-            if(r.status_code == 200):
-                return r.text
-            else:
-                raise Exception('Fail to access the server')
-        except Exception:
-            wait(time)
+        for i in range(times):
+            try:
+                r = requests.post(url, files=file)
+                if(r.status_code == 200):
+                    return r.text
+                else:
+                    raise Exception('Fail to access the server')
+            except Exception:
+                wait(time)
 
     raise Exception('Fail to access the server')
 
