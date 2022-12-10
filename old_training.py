@@ -9,7 +9,7 @@ import xgboost as xgb
 from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
-from encoding import *
+from old_encoding import *
 import sklearn
 import math
 from sklearn.neighbors import KNeighborsClassifier
@@ -39,13 +39,13 @@ with open('handout/test_without_label.csv') as file:
 Xtemp = generateX(queries)
 sigmaConn = Xtemp[0]
 sigmaCond = Xtemp[1]
-sigmaTable= Xtemp[2]
-X = Xtemp[3]
+# sigmaTable= Xtemp[2]
+X = Xtemp[2]
 Y = generateY(queries)
 print('Done')
 
 # Test Point D -- Ok
-Xpred = generatePredX(sigmaConn, sigmaCond, sigmaTable, predQueries)
+Xpred = generatePredX(sigmaConn, sigmaCond, predQueries)
 print('Done')
 
 # scaler = StandardScaler()
@@ -332,6 +332,7 @@ model.fit(X_train, Y_train)
 # model = AdaBoostRegressor(base_estimator=decisionTreeRegressor, n_estimators=200, learning_rate=0.1, random_state=0, loss='square') # Todo: n_estimators and learning_rate can be further adjusted, loss can be 'square-log'?
 # model.fit(X_train,Y_train)
 
+
 # ypred = model.predict(X_validation)
 # print('MSLE of prediction on boston dataset:', mean_squared_log_error(Y_validation, ypred))
 # print('\n')
@@ -339,13 +340,10 @@ model.fit(X_train, Y_train)
 ypred2 = model.predict(Xpred)
 list = []
 for i in range (2000):
-    templist = [i , (math.exp(ypred2[i]))]
+    templist = [i ,math.exp(ypred2[i])]
     list.append(templist)
 print(ypred2.shape)
 
 column = ['Query ID', 'Predicted Cardinality']
 test=pd.DataFrame(columns=column, data=list)
 test.to_csv('test_output.csv', index=False)
-
-
-## 12.10 暴力调参
