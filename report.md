@@ -1,4 +1,4 @@
-# 基于弱学习器的查询规模预测模型设计与调优<br/>石依凡  2020202264<br/>徐一宸  2020201432
+# 基于弱学习器的查询规模预测<br/>模型设计与调优<br/>石依凡  2020202264<br/>徐一宸  2020201432
 
 ## 1  实验概述
 
@@ -102,10 +102,11 @@ $$
 $$
 \sigma_{join}(q)[i]:=\text{Join}_i\in q
 $$
-条件信息的分向量共$36$维，维度$2i$和$2i+1$的值表示如下（$0\le i\le 17$）：
+条件信息的分向量共$36$维，维度$2i$和$2i+1$的经过标准化的值表示如下（$0\le i\le 17$）：
 $$
-\sigma_{condition}(q)[2i]:=\text{Condition}_i.lower\_bound\\
-\sigma_{condition}(q)[2i+1]:=\text{Condition}_i.upper\_bound
+\sigma_{condition}(q)[2i]:=scaler(\text{Condition}_i.lower\_bound)\\
+\sigma_{condition}(q)[2i+1]:=scaler(\text{Condition}_i.upper\_bound)\\
+scaler(x):=\frac{x-\text{minVal}}{\text{maxVal}-\text{minVal}}
 $$
 对于不存在的条件，向量值均为$0$。
 
@@ -125,14 +126,7 @@ from sklearn.ensemble import AdaBoostClassifier, AdaBoostRegressor
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 ```
 
-<<<<<<< Updated upstream
-我们采用`train_test_split`来对训练集进行分割；采用`mean_squared_log_error`和`accuracy_score`来对验证集进行评分，从而判断在当前参数下模型的优秀程度；采用`MinMaxScaler`和`StandardSacler`对编码后的向量进行进一步的标准化 ；采用`GridSearchCV`进行参数调优。
-
-在模型的选用上，我们对各种模型的分类器和回归器都进行了测试，结果是显然的——本次实验更加适用于回归器。
-除了XBGoost模型之外，我们还尝试了KNN模型、AdaBoost模型以及决策树模型，
-=======
-我们采用`train_test_split`来对训练集进行分割，采用`mean_squared_log_error`和`accuracy_score`来对验证集进行评分，从而判断在当前参数下模型的优秀程度。
->>>>>>> Stashed changes
+我们采用`train_test_split`来对训练集进行分割；采用`mean_squared_log_error`和`accuracy_score`来对验证集进行评分，从而判断在当前参数下模型的优秀程度；采用`GridSearchCV`进行参数调优。
 
 在模型的选用上，我们对各种模型的分类器和回归器都进行了测试，结果是显然的——本次实验更加适用于回归器。除了XGBoost模型之外，我们还尝试了KNN模型、AdaBoost模型以及决策树模型（Decision Tree），在对比之下，最后选择了相对更优的XGBoost模型。
 
@@ -144,60 +138,9 @@ from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 在调参过程中，我们着重关注的参数有以下这些：
 
-<<<<<<< Updated upstream
-XGBoost框架参数(General parameters):
-1. booster [ default = gbtree ]<br/>
-booster决定了XGBoost使用的弱学习器类型，可以是默认的gbtree, 也就是CART决策树，还可以是线性弱学习器gblinear以及DART。一般来说，我们使用gbtree就可以了，不需要调参。
-2. n_estimators [ default = 100 ]<br/>
-n_estimators则是非常重要的要调的参数，它关系到我们XGBoost模型的复杂度，因为它代表了我们决策树弱学习器的个数。这个参数对应sklearn GBDT的n_estimators。n_estimators太小，容易欠拟合，n_estimators太大，模型会过于复杂，一般需要调参选择一个适中的数值。
-3. objective [ 回归default = reg:squarederror ][ 二分类default = binary:logistic ][ 多分类default = multi:softmax ]<br/>
-objective代表了我们要解决的问题是分类还是回归，或其他问题，以及对应的损失函数。具体可以取的值很多，一般我们只关心在分类和回归的时候使用的参数。在回归问题objective一般使用reg:squarederror ，即MSE均方误差。二分类问题一般使用binary:logistic, 多分类问题一般使用multi:softmax。
-
-XGBoost 弱学习器参数(Booster parameters):
-1. learning_rate [default = 0.3 ]<br/>
-learning_rate控制每个弱学习器的权重缩减系数，和sklearn GBDT的learning_rate类似，较小的learning_rate意味着我们需要更多的弱学习器的迭代次数。通常我们用步长和迭代最大次数一起来决定算法的拟合效果。所以这两个参数n_estimators和learning_rate要一起调参才有效果。当然也可以先固定一个learning_rate ，然后调完n_estimators，再调完其他所有参数后，最后再来调learning_rate和n_estimators。
-2. max_depth [ default = 6 ]<br/>
-控制树结构的深度， 数据少或者特征少的时候可以不管这个值。如果模型样本量多，特征也多的情况下，需要限制这个最大深度， 具体的取值一般要网格搜索调参。这个参数对应sklearn GBDT的max_depth。要注意，在训练深树时，XGBoost会大量消耗内存。
-3. gamma [ default = 0 ]<br/>
-XGBoost的决策树分裂所带来的损失减小阈值。也就是我们在尝试树结构分裂时，会尝试最大数下式：
-4. reg_alpha[ default = 0 ]/reg_lambda[ default = 1]<br/>
-这2个是XGBoost的正则化参数。reg_alpha是L1正则化系数，reg_lambda是L2正则化系数，
-5. subsample [ default = 1]<br/>
-子采样参数，这个也是不放回抽样，和sklearn GBDT的subsample作用一样。也就是说随机森林的每棵树的训练有可能会碰到训练集中两个样本重合的状况，因为是放回抽样；像GBDT\XGBoost训练每棵树的训练样本是不会重合的，只是subsample会控制整个训练集被选中的概率。选择小于1的比例可以减少方差，即防止过拟合，但是会增加样本拟合的偏差，因此取值不能太低。初期可以取值1，如果发现过拟合后可以网格搜索调参找一个相对小一些的值。
-6. colsample_bytree, colsample_bylevel, colsample_bynode [ default = 1 ]<br/>
-这三个参数都是用于特征采样的，默认都是不做采样，即使用所有的特征建立决策树。colsample_bytree控制整棵树的特征采样比例，colsample_bylevel控制某一层(depth)的特征采样比例，而colsample_bynode(split)控制某一个树节点的特征采样比例。比如我们一共64个特征，则假设colsample_bytree，colsample_bylevel和colsample_bynode都是0.5，则某一个树节点分裂时会随机采样8个特征来尝试分裂子树。
-
-针对参数调优，我们采用网格搜索和交叉验证(GridSearchCV)的方法，即在指定的参数范围内，按步长依次调整参数，利用调整的参数训练学习器，从所有的参数中找到在验证集上精度最高的参数，是一个训练和比较的过程。k折交叉验证将所有数据集分成k份，不重复地每次取其中一份做测试集，用其余k-1份做训练集训练模型，之后计算该模型在测试集上的得分,将k次的得分取平均得到最后的得分。GridSearchCV可以保证在指定的参数范围内找到精度最高的参数，但是这也是网格搜索的缺陷所在，他要求遍历所有可能参数的组合，在面对大数据集和多参数的情况下，非常耗时。
-
-```python
-# xgboost 调参
-# cv_params = {'n_estimators': [500,600,700,800]} #800 is the best
-# cv_params = {'max_depth': [4,5,6,7,8,9], 'min_child_weight': [1,2,3,4,5,6]} #9,4 is the best
-# cv_params = {'gamma': [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7]} #0 is the best
-# cv_params = {'subsample': [0.6, 0.7, 0.9, 0.9], 'colsample_bytree': [0.6, 0.7, 0.9, 0.9]} #both 0.9 is the best
-cv_params = {'learning_rate': [0.2,0.25,0.3,0.5]} #0.05 is the best
-
-other_params = {'n_estimators':1000,'learning_rate': 0.2}
-
-model = XGBRegressor(**other_params)
-
-optimized_GBM = GridSearchCV(estimator=model, param_grid=cv_params, scoring='r2', cv=5, verbose=1, n_jobs=4)
-optimized_GBM.fit(X_train, Y_train)
-
-evalute_result = optimized_GBM.cv_results_['mean_test_score']
-print('Each iteration result: {0}'.format(evalute_result))
-print('The best argument values: {0}'.format(optimized_GBM.best_params_))
-print('The best model score: {0}'.format(optimized_GBM.best_score_))
-```
-
-我们每次选择不同的参数或者参数组合，输入到sklearn提供的GridSearchCV函数中，并得到局部的参数最优解。
-
-最终我们的模型选择的参数如下: 
-model = XGBRegressor(n_estimators=457, learning_rate=0.18, max_depth=5, gamma=0.2)，其余参数都为默认值。
-=======
 **XGBoost框架参数(General parameters)：**
 
-* n_estimators [ default = 100 ]
+* n_estimators [ default = $100$ ]
   * n_estimators则是非常重要的参数，它关系到我们XGBoost模型的复杂度。
   * 它代表了我们决策树弱学习器的个数。这个参数对应sklearn GBDT的n_estimators。
   * n_estimators太小，容易欠拟合，n_estimators太大，模型会过于复杂，需要选择一个适中的数值。
@@ -207,33 +150,55 @@ model = XGBRegressor(n_estimators=457, learning_rate=0.18, max_depth=5, gamma=0.
 
 **XGBoost 弱学习器参数(Booster parameters)：**
 
-* learning_rate [default = 0.3 ]
+* learning_rate [default = $0.3$ ]
   * learning_rate控制每个弱学习器的权重缩减系数，和sklearn GBDT的learning_rate类似，较小的learning_rate意味着我们需要更多的弱学习器的迭代次数。
   * 通常我们用步长和迭代最大次数一起来决定算法的拟合效果。所以这两个参数n_estimators和learning_rate要一起调优才有效果。当然也可以先固定一个learning_rate ，然后调完n_estimators，再调完其他所有参数后，最后再来重新调整learning_rate和n_estimators。
-* max_depth [ default = 6 ]
+* max_depth [ default = $6$ ]
   * 控制树结构的深度， 数据少或者特征少的时候可以不管这个值。
   * 如果模型样本量多，特征也多的情况下，需要限制这个最大深度， 具体的取值一般要网格搜索调参。这个参数对应sklearn GBDT的max_depth。在训练深树时，XGBoost会大量消耗内存。
-* gamma [ default = 0 ]
+* gamma [ default = $0$ ]
   * XGBoost的决策树分裂所带来的损失减小阈值。
 
-| 序号 | n_estimators | learning_rate | MSLE |
-| ---- | ------------ | ------------- | ---- |
-|      |              |               |      |
-|      |              |               |      |
-|      |              |               |      |
-|      |              |               |      |
-|      |              |               |      |
-|      |              |               |      |
-|      |              |               |      |
-|      |              |               |      |
-|      |              |               |      |
+针对参数调优，我们采用网格搜索和交叉验证（GridSearchCV）的方法，即在指定的参数范围内，按步长依次调整参数，利用调整的参数训练学习器，从所有的参数中找到在验证集上精度最高的参数，是一个训练和比较的过程。$k$折交叉验证将所有数据集分成$k$份，不重复地每次取其中一份做测试集，用其余$k-1$份做训练集训练模型，之后计算该模型在测试集上的得分,将$k$次的得分取平均得到最后的得分。GridSearchCV可以保证在指定的参数范围内找到精度最高的参数。
+
+```python
+# xgboost 调参
+# cv_params = {'n_estimators': [500,600,700,800]} #800 is the best
+# cv_params = {'max_depth': [4,5,6,7,8,9], 'min_child_weight': [1,2,3,4,5,6]} #9,4 is the best
+# cv_params = {'gamma': [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7]} #0 is the best
+# cv_params = {'subsample': [0.6, 0.7, 0.9, 0.9], 'colsample_bytree': [0.6, 0.7, 0.9, 0.9]} #both 0.9 is the best
+
+cv_params = {'learning_rate': [0.2,0.25,0.3,0.5]} #0.05 is the best
+other_params = {'n_estimators':1000,'learning_rate': 0.2}
+model = XGBRegressor(**other_params)
+
+optimized_GBM = GridSearchCV(estimator=model, param_grid=cv_params, scoring='r2', cv=5, verbose=1, n_jobs=4)
+optimized_GBM.fit(X_train, Y_train)
+evalute_result = optimized_GBM.cv_results_['mean_test_score']
+print('Each iteration result: {0}'.format(evalute_result))
+print('The best argument values: {0}'.format(optimized_GBM.best_params_))
+print('The best model score: {0}'.format(optimized_GBM.best_score_))
+```
+
+我们每次选择不同的参数或者参数组合，输入到`sklearn`提供的`GridSearchCV`函数中，并得到局部的参数最优解。
+
+| 序号  | n_estimators | learning_rate | MSLE      |
+| ----- | ------------ | ------------- | --------- |
+| 1     | 447          | 0.08          | 1.070     |
+| 2     | 447          | 0.18          | 1.052     |
+| 3     | 447          | 0.28          | 1.118     |
+| 4     | 457          | 0.08          | 1.070     |
+| **5** | **457**      | **0.18**      | **1.051** |
+| 6     | 457          | 0.28          | 1.118     |
+| 7     | 467          | 0.08          | 1.070     |
+| 8     | 467          | 0.18          | 1.052     |
+| 9     | 467          | 0.28          | 1.118     |
 
 上表是部分我们尝试不同参数下的损失结果。对比之后，最终我们形成的相对最优模型如下所示： 
 
 ```python
 model = XGBRegressor(n_estimators=457, learning_rate=0.18, max_depth=5, gamma=0.2)
 ```
->>>>>>> Stashed changes
 
 ## 4  总结与展望
 
