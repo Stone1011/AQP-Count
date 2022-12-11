@@ -115,8 +115,7 @@ from sklearn.ensemble import AdaBoostClassifier, AdaBoostRegressor
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 ```
 
-我们采用`train_test_split`来对训练集进行分割，
-采用`mean_squared_log_error`和`accuracy_score`来对验证集进行评分，从而判断在当前参数下模型的优秀程度。
+我们采用`train_test_split`来对训练集进行分割；采用`mean_squared_log_error`和`accuracy_score`来对验证集进行评分，从而判断在当前参数下模型的优秀程度；采用`MinMaxScaler`和`StandardSacler`对编码后的向量进行进一步的标准化 ；采用`GridSearchCV`进行参数调优。
 
 在模型的选用上，我们对各种模型的分类器和回归器都进行了测试，结果是显然的——本次实验更加适用于回归器。
 除了XBGoost模型之外，我们还尝试了KNN模型、AdaBoost模型以及决策树模型，
@@ -166,6 +165,31 @@ XGBoost的决策树分裂所带来的损失减小阈值。也就是我们在尝�
 子采样参数，这个也是不放回抽样，和sklearn GBDT的subsample作用一样。也就是说随机森林的每棵树的训练有可能会碰到训练集中两个样本重合的状况，因为是放回抽样；像GBDT\XGBoost训练每棵树的训练样本是不会重合的，只是subsample会控制整个训练集被选中的概率。选择小于1的比例可以减少方差，即防止过拟合，但是会增加样本拟合的偏差，因此取值不能太低。初期可以取值1，如果发现过拟合后可以网格搜索调参找一个相对小一些的值。
 6. colsample_bytree, colsample_bylevel, colsample_bynode [ default = 1 ]<br/>
 这三个参数都是用于特征采样的，默认都是不做采样，即使用所有的特征建立决策树。colsample_bytree控制整棵树的特征采样比例，colsample_bylevel控制某一层(depth)的特征采样比例，而colsample_bynode(split)控制某一个树节点的特征采样比例。比如我们一共64个特征，则假设colsample_bytree，colsample_bylevel和colsample_bynode都是0.5，则某一个树节点分裂时会随机采样8个特征来尝试分裂子树。
+
+针对参数调优，我们采用网格搜索和交叉验证(GridSearchCV)的方法，即在指定的参数范围内，按步长依次调整参数，利用调整的参数训练学习器，从所有的参数中找到在验证集上精度最高的参数，是一个训练和比较的过程。k折交叉验证将所有数据集分成k份，不重复地每次取其中一份做测试集，用其余k-1份做训练集训练模型，之后计算该模型在测试集上的得分,将k次的得分取平均得到最后的得分。GridSearchCV可以保证在指定的参数范围内找到精度最高的参数，但是这也是网格搜索的缺陷所在，他要求遍历所有可能参数的组合，在面对大数据集和多参数的情况下，非常耗时。
+
+```python
+# xgboost 调参
+# cv_params = {'n_estimators': [500,600,700,800]} #800 is the best
+# cv_params = {'max_depth': [4,5,6,7,8,9], 'min_child_weight': [1,2,3,4,5,6]} #9,4 is the best
+# cv_params = {'gamma': [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7]} #0 is the best
+# cv_params = {'subsample': [0.6, 0.7, 0.9, 0.9], 'colsample_bytree': [0.6, 0.7, 0.9, 0.9]} #both 0.9 is the best
+cv_params = {'learning_rate': [0.2,0.25,0.3,0.5]} #0.05 is the best
+
+other_params = {'n_estimators':1000,'learning_rate': 0.2}
+
+model = XGBRegressor(**other_params)
+
+optimized_GBM = GridSearchCV(estimator=model, param_grid=cv_params, scoring='r2', cv=5, verbose=1, n_jobs=4)
+optimized_GBM.fit(X_train, Y_train)
+
+evalute_result = optimized_GBM.cv_results_['mean_test_score']
+print('Each iteration result: {0}'.format(evalute_result))
+print('The best argument values: {0}'.format(optimized_GBM.best_params_))
+print('The best model score: {0}'.format(optimized_GBM.best_score_))
+```
+
+我们每次选择不同的参数或者参数组合，输入到sklearn提供的GridSearchCV函数中，并得到局部的参数最优解。
 
 最终我们的模型选择的参数如下: 
 model = XGBRegressor(n_estimators=457, learning_rate=0.18, max_depth=5, gamma=0.2)，其余参数都为默认值。
