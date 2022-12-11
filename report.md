@@ -206,9 +206,13 @@ model = XGBRegressor(n_estimators=457, learning_rate=0.18, max_depth=5, gamma=0.
 
 ## 4  总结与展望
 
-
+本次实验以SQL查询为背景，以估算查询规模为导向，极大程度上锻炼了我们对于现实问题的建模能力，提升了我们的抽象思维，深化了我们对课上机器学习方法以及课后具体的机器学习算法的认识。在这次实验中，我们手动实现了对数据的挖掘、编码、建模和分析，充分地提升了我们对于机器学习算法五个“标准组件”的理解，让我们感受到了它的灵活与强大。在今后的学习生活中，我们会继续保持探索精神，用在本次实验中习得的思想与方法解决生活中的实际问题。
 
 <div STYLE="page-break-after: always;"></div>
 
 ## 参考文献
+
+[1]Andreas Kipf, Thomas Kipf, Bernhard Radke, Viktor Leis, Peter Boncz, Alfons Kemper. 2018. Learned Cardinalities: Estimating Correlated Joins with Deep Learning 
+
+[2]Anshuman Dutt, Chi Wang, Vivek Narasayya, and Surajit Chaudhuri. 2020. Efficiently approximating selectivity functions using low overhead regression models.
 
