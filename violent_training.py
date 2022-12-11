@@ -175,74 +175,74 @@ best_min_child_weight = 0
 best_subsample = 0
 best_gamma = 0
 
-
+learningrate_list = [0.08, 0.18, 0.28, 0.38, 0.48, 0.58 ,0.68]
 # model = XGBRegressor(n_estimators=457, learning_rate=0.18, max_depth=5, min_child_weight=1, subsample=1, gamma=0.2)
+list36 = []
+for j0 in np.arange(437, 497, 10):
+    for j1 in np.arange(0.08, 0.78, 0.1).round(3):
+        model = XGBRegressor(n_estimators=j0, learning_rate=j1, max_depth=5, min_child_weight=1, subsample=1, gamma=0.2)
+        model.fit(X_train, Y_train)
+        ypred2 = model.predict(Xpred)
+        list = []
+        for i in range(2000):
+            templist = [i, math.exp(ypred2[i])]
+            list.append(templist)
+        # print(ypred2.shape)
 
-# for j0 in np.arange(1, 10, 1):
-#     for j1 in np.arange(1, 10, 1).round(3):
-#         model = XGBRegressor(n_estimators=457, learning_rate=0.18, max_depth=j0, min_child_weight=j1, subsample=1, gamma=0.2)
-#         model.fit(X_train, Y_train)
-#         ypred2 = model.predict(Xpred)
-#         list = []
-#         for i in range(2000):
-#             if (math.exp(ypred2[i])) <= 36244344:
-#                 templist = [i, math.exp(ypred2[i])]
-#             else:
-#                 templist = [i, 36244344]
-#
-#             list.append(templist)
-#         # print(ypred2.shape)
-#
-#         column = ['Query ID', 'Predicted Cardinality']
-#         test = pd.DataFrame(columns=column, data=list)
-#         test.to_csv('test_output.csv', index=False)
-#
-#         temp = submit.submit('test_output.csv')
-#
-#         message = 'max_depth: '+str(j0)+', min_child_weight: '+str(j1)+', scoring: '+str(temp)
-#         print(message)
-#         # print('learning_rate: ',j1,', scoring: ',temp)
-#         # print('n_estimators: ',j0,', scoring: ',temp)
-#         # print('max_depth: ',j,', scoring: ',temp)
-#         # print('min_child_weight: ',j,', scoring: ',temp)
-#         # print('subsample: ',j,', scoring: ', temp)
-#         # print('gamma: ',j,', scoring: ', temp)
-#
-#         if(float(temp) < float(min)):
-#             min = temp
-#             # best_learing_rate = j1
-#             # best_n_estimators = j0
-#             best_max_depth = j0
-#             best_min_child_weight = j1
-#             # best_subsample = j
-#             # best_gamma = j
-#             test.to_csv('best_output.csv', index=False)
-#
-#         sleep_time = random.randrange(10, 20)
-#         time.sleep(sleep_time)
+        column = ['Query ID', 'Predicted Cardinality']
+        test = pd.DataFrame(columns=column, data=list)
+        test.to_csv('test_output.csv', index=False)
+
+        temp = submit.submit('test_output.csv')
+
+        message = 'n_estimators: '+str(j0)+', learning_rate: '+str(j1)+', scoring: '+str(temp)
+        print(message)
+        templist2 =  [j0, j1, temp]
+        list36.append(templist2)
+        # print('learning_rate: ',j1,', scoring: ',temp)
+        # print('n_estimators: ',j0,', scoring: ',temp)
+        # print('max_depth: ',j,', scoring: ',temp)
+        # print('min_child_weight: ',j,', scoring: ',temp)
+        # print('subsample: ',j,', scoring: ', temp)
+        # print('gamma: ',j,', scoring: ', temp)
+
+        if(float(temp) < float(min)):
+            min = temp
+            best_learing_rate = j1
+            best_n_estimators = j0
+            # best_max_depth = j0
+            # best_min_child_weight = j1
+            # best_subsample = j
+            # best_gamma = j
+            test.to_csv('best_output.csv', index=False)
+
+        # sleep_time = random.randrange(10, 20)
+        # time.sleep(sleep_time)
 
 
-# print('best_learing_rate is: ', best_learing_rate) #0.18
-# print('best_n_estimators is: ', best_n_estimators) #457
-print('best_max_depth is: ', best_max_depth) #5
-print('best_min_child_weight is: ', best_min_child_weight) #1
+print('best_learing_rate is: ', best_learing_rate) #0.18
+print('best_n_estimators is: ', best_n_estimators) #457
+# print('best_max_depth is: ', best_max_depth) #5
+# print('best_min_child_weight is: ', best_min_child_weight) #1
 # print('best_subsample is: ', best_subsample) #1
-print('best_gamma is: ', best_gamma) #0.2
+# print('best_gamma is: ', best_gamma) #0.2
 print('best_score is: ', min)
 
+column = ['n_estimators', 'learning_rate', 'scoring']
+test = pd.DataFrame(columns=column, data=list36)
+test.to_excel('36.xlsx', index=False)
 
 
-
-model = XGBRegressor(n_estimators=457, learning_rate=0.18, max_depth=5, min_child_weight=1, subsample=1, gamma=0.2)
+model = XGBRegressor(n_estimators=457, learning_rate=0.18, max_depth=5, gamma=0.2)
 model.fit(X_train, Y_train)
 ypred2 = model.predict(Xpred)
 list = []
 for i in range(2000):
-    if (math.exp(ypred2[i])) <= 36244344:
-        templist = [i, math.exp(ypred2[i])]
-    else:
-        templist = [i, 36244344]
-    # templist = [i, math.exp(ypred2[i])]
+    # if (math.exp(ypred2[i])) <= 36244344:
+    #     templist = [i, math.exp(ypred2[i])]
+    # else:
+    #     templist = [i, 36244344]
+    templist = [i, math.exp(ypred2[i])]
 
     list.append(templist)
 # print(ypred2.shape)
@@ -253,3 +253,4 @@ test.to_csv('test_output.csv', index=False)
 
 temp = submit.submit('test_output.csv')
 print(temp)
+
