@@ -212,7 +212,12 @@ model = XGBRegressor(n_estimators=457, learning_rate=0.18, max_depth=5, gamma=0.
 
 ## 参考文献
 
-[1]Andreas Kipf, Thomas Kipf, Bernhard Radke, Viktor Leis, Peter Boncz, Alfons Kemper. 2018. Learned Cardinalities: Estimating Correlated Joins with Deep Learning 
+[1] Kipf, A., Kipf, T., Radke, B., Leis, V., Boncz, P., & Kemper, A. (2018). Learned cardinalities: Estimating correlated joins with deep learning. arXiv preprint arXiv:1809.00677.
 
-[2]Anshuman Dutt, Chi Wang, Vivek Narasayya, and Surajit Chaudhuri. 2020. Efficiently approximating selectivity functions using low overhead regression models.
+[2] Dutt, A., Wang, C., Narasayya, V., & Chaudhuri, S. (2020). Efficiently approximating selectivity functions using low overhead regression models. Proceedings of the VLDB Endowment, 13(12), 2215-2228.
 
+[3] Chen, T., He, T., Benesty, M., Khotilovich, V., Tang, Y., Cho, H., & Chen, K. (2015). Xgboost: extreme gradient boosting. R package version 0.4-2, 1(4), 1-4.
+
+[4] Shehadeh, A., Alshboul, O., Al Mamlook, R. E., & Hamedat, O. (2021). Machine learning models for predicting the residual value of heavy construction equipment: An evaluation of modified decision tree, LightGBM, and XGBoost regression. Automation in Construction, 129, 103827.
+
+[5] Park, Y., Zhong, S., & Mozafari, B. (2020, June). Quicksel: Quick selectivity learning with mixture models. In Proceedings of the 2020 ACM SIGMOD International Conference on Management of Data (pp. 1017-1033).
