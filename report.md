@@ -12,6 +12,8 @@
 
 测试集和训练集由逗号分隔值（CSV）格式给出。下面的SQL语句：
 
+<div style="page-break-after: always;"></div>
+
 ```sql
 SELECT COUNT(*)
 FROM Table_0 Alias_0, Table_1 Alias_1, ... # And Other Tables
@@ -80,6 +82,8 @@ XGBoost 具有以下优点：
 
 在本次实验中，由于没有具体的数据，我们只能通过建模回归的方法来对给出的SQL查询条件进行规模预测。未来如果想要让预测的准确率更好，我们可以进一步改进编码模式，尝试更多的、与测试集数据更加匹配的机器学习、神经网络甚至深度学习模型，争取能够达到更好的表现，给用户更加良好的体验。
 
+<div style="page-break-after: always;"></div>
+
 ## 2  具体实现
 
 ### 2.1  数据特征分析
@@ -113,6 +117,8 @@ $$
 scaler(x):=\frac{x-\text{minVal}}{\text{maxVal}-\text{minVal}}
 $$
 对于不存在的条件，向量值均为$0$。
+
+<div style="page-break-after: always;"></div>
 
 ### 2.3  模型训练
 
@@ -165,15 +171,19 @@ from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 针对参数调优，我们采用网格搜索和交叉验证（GridSearchCV）的方法，即在指定的参数范围内，按步长依次调整参数，利用调整的参数训练学习器，从所有的参数中找到在验证集上精度最高的参数，是一个训练和比较的过程。$k$折交叉验证将所有数据集分成$k$份，不重复地每次取其中一份做测试集，用其余$k-1$份做训练集训练模型，之后计算该模型在测试集上的得分,将$k$次的得分取平均得到最后的得分。GridSearchCV可以保证在指定的参数范围内找到精度最高的参数。
 
+参数调优的Python代码如下所示。这里展示了我们调整`learning_rate`的过程，最终取`learning_rate = 0.18`，最终的损失最小。
+
+<div style="page-break-after: always;"></div>
+
 ```python
 # xgboost 调参
-# cv_params = {'n_estimators': [500,600,700,800]} #800 is the best
+# cv_params = {'n_estimators': [447,457,467]} #457 is the best
 # cv_params = {'max_depth': [4,5,6,7,8,9], 'min_child_weight': [1,2,3,4,5,6]} #9,4 is the best
 # cv_params = {'gamma': [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7]} #0 is the best
 # cv_params = {'subsample': [0.6, 0.7, 0.9, 0.9], 'colsample_bytree': [0.6, 0.7, 0.9, 0.9]} #both 0.9 is the best
 
-cv_params = {'learning_rate': [0.2,0.25,0.3,0.5]} #0.05 is the best
-other_params = {'n_estimators':1000,'learning_rate': 0.2}
+cv_params = {'learning_rate': [0.08,0.18,0.28]} #0.18 is the best
+other_params = {'n_estimators':457,'learning_rate': 0.18}
 model = XGBRegressor(**other_params)
 
 optimized_GBM = GridSearchCV(estimator=model, param_grid=cv_params, scoring='r2', cv=5, verbose=1, n_jobs=4)
@@ -208,7 +218,7 @@ model = XGBRegressor(n_estimators=457, learning_rate=0.18, max_depth=5, gamma=0.
 
 本次实验以SQL查询为背景，以估算查询规模为导向，极大程度上锻炼了我们对于现实问题的建模能力，提升了我们的抽象思维，深化了我们对课上机器学习方法以及课后具体的机器学习算法的认识。在这次实验中，我们手动实现了对数据的挖掘、编码、建模和分析，充分地提升了我们对于机器学习算法五个“标准组件”的理解，让我们感受到了它的灵活与强大。在今后的学习生活中，我们会继续保持探索精神，用在本次实验中习得的思想与方法解决生活中的实际问题。
 
-<div STYLE="page-break-after: always;"></div>
+<div style="page-break-after: always;"></div>
 
 ## 参考文献
 
