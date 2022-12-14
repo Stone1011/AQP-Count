@@ -74,7 +74,7 @@ XGBoost 具有以下优点：
 
 ####  1.3.3  取得的结果
 
-在助教提供的测试网站上，我们取得了较好的效果，测试集的MSLE达到了$1.0514347331312608$。如下图所示：
+在助教提供的测试网站上，我们取得了较好的效果，测试集的MSLE达到了$0.9964944509395802$。如下图所示：
 
 ![score](pics/score.png)
 
@@ -93,7 +93,7 @@ XGBoost 具有以下优点：
 * 待预测的自变量有且仅有三个组成信息：表信息、连接信息和条件信息。
 * 一共有$6$个表出现在数据集中；
 * 考虑到连接操作的实际意义，一共有$5$种有效的连接操作出现在数据集中；
-* 一共有$18$种不同的数据列作为条件的一部分；
+* 考虑到条件操作左值的实际意义，一共有$9$种不同的数据列作为条件的一部分；
 * 所有的条件都是值不相关的，也就是说条件的右值一定是常量。
 
 ### 2.2  编码实现
@@ -102,21 +102,20 @@ XGBoost 具有以下优点：
 $$
 Vec_{query}(q)=\mathbf{join} \{ \sigma_{table}(q),\sigma_{join}(q),\sigma_{condition}(q) \}
 $$
-表信息的分向量共$6$维，维度$i$的值表示即第$i$张表是否存在于查询中：
+表信息的分向量共$6$维，维度$i$的值表示即按照名称排序的第$i$张表是否存在于查询中：
 $$
 \sigma_{table}(q)[i]:=\text{Table}_i\in q
 $$
-连接信息的分向量共$5$维，维度$i$的值表示即第$i$个连接条件是否存在于查询中：
+连接信息的分向量共$5$维，维度$i$的值表示即按照名称排序的第$i$个连接条件是否存在于查询中：
 $$
 \sigma_{join}(q)[i]:=\text{Join}_i\in q
 $$
-条件信息的分向量共$36$维，维度$2i$和$2i+1$的经过标准化的值表示如下（$0\le i\le 17$）：
+条件信息的分向量共$18$维，每一个数据列对应$2$个维度。将所有的原始条件转化为一个区间`[lower_bound, upper_bound]`后，将这$18$个区间端点条件按名称排序，随后定义标准化后维度$i$的值：
 $$
-\sigma_{condition}(q)[2i]:=scaler(\text{Condition}_i.lower\_bound)\\
-\sigma_{condition}(q)[2i+1]:=scaler(\text{Condition}_i.upper\_bound)\\
+\sigma_{condition}(q)[i]:=scaler(transform(\text{Conditions}).sort()_i)\\
 scaler(x):=\frac{x-\text{minVal}}{\text{maxVal}-\text{minVal}}
 $$
-对于不存在的条件，向量值均为$0$。
+对于查询中不存在的表、连接、条件的下界，向量值均为$0$；对于查询中不存在的条件的上界，向量值为$1$。
 
 <div style="page-break-after: always;"></div>
 
@@ -171,19 +170,18 @@ from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 针对参数调优，我们采用网格搜索和交叉验证（GridSearchCV）的方法，即在指定的参数范围内，按步长依次调整参数，利用调整的参数训练学习器，从所有的参数中找到在验证集上精度最高的参数，是一个训练和比较的过程。$k$折交叉验证将所有数据集分成$k$份，不重复地每次取其中一份做测试集，用其余$k-1$份做训练集训练模型，之后计算该模型在测试集上的得分,将$k$次的得分取平均得到最后的得分。GridSearchCV可以保证在指定的参数范围内找到精度最高的参数。
 
-参数调优的Python代码如下所示。这里展示了我们调整`learning_rate`的过程，最终取`learning_rate = 0.18`，最终的损失最小。
+参数调优的Python代码如下所示。这里展示了我们调整`learning_rate`的过程，最终取`learning_rate = 0.11`，最终的损失最小。
 
 <div style="page-break-after: always;"></div>
 
 ```python
 # xgboost 调参
-# cv_params = {'n_estimators': [447,457,467]} #457 is the best
-# cv_params = {'max_depth': [4,5,6,7,8,9], 'min_child_weight': [1,2,3,4,5,6]} #9,4 is the best
+# cv_params = {'n_estimators': [567,577,587]} #577 is the best
+# cv_params = {'max_depth': [4,5,6], 'min_child_weight': [3,4,5]} #5, 4 is the best
 # cv_params = {'gamma': [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7]} #0 is the best
-# cv_params = {'subsample': [0.6, 0.7, 0.9, 0.9], 'colsample_bytree': [0.6, 0.7, 0.9, 0.9]} #both 0.9 is the best
 
-cv_params = {'learning_rate': [0.08,0.18,0.28]} #0.18 is the best
-other_params = {'n_estimators':457,'learning_rate': 0.18}
+cv_params = {'learning_rate': [0.06,0.11,0.16]} #0.11 is the best
+other_params = {'n_estimators':577,'learning_rate': 0.11}
 model = XGBRegressor(**other_params)
 
 optimized_GBM = GridSearchCV(estimator=model, param_grid=cv_params, scoring='r2', cv=5, verbose=1, n_jobs=4)
@@ -198,20 +196,20 @@ print('The best model score: {0}'.format(optimized_GBM.best_score_))
 
 | 序号  | n_estimators | learning_rate | MSLE      |
 | ----- | ------------ | ------------- | --------- |
-| 1     | 447          | 0.08          | 1.070     |
-| 2     | 447          | 0.18          | 1.052     |
-| 3     | 447          | 0.28          | 1.118     |
-| 4     | 457          | 0.08          | 1.070     |
-| **5** | **457**      | **0.18**      | **1.051** |
-| 6     | 457          | 0.28          | 1.118     |
-| 7     | 467          | 0.08          | 1.070     |
-| 8     | 467          | 0.18          | 1.052     |
-| 9     | 467          | 0.28          | 1.118     |
+| 1     | 567          | 0.06          | 1.017     |
+| 2     | 567          | 0.11          | 0.997     |
+| 3     | 567          | 0.16          | 1.010     |
+| 4     | 577          | 0.06          | 1.017     |
+| **5** | **577**      | **0.11**      | **0.996** |
+| 6     | 577          | 0.16          | 1.010     |
+| 7     | 587          | 0.06          | 1.017     |
+| 8     | 587          | 0.11          | 0.996     |
+| 9     | 587          | 0.16          | 1.011     |
 
 上表是部分我们尝试不同参数下的损失结果。对比之后，最终我们形成的相对最优模型如下所示： 
 
 ```python
-model = XGBRegressor(n_estimators=457, learning_rate=0.18, max_depth=5, gamma=0.2)
+model = XGBRegressor(n_estimators=577, learning_rate=0.11, max_depth=5, min_child_weight=4, scale_pos_weight=10, base_score=50)
 ```
 
 ## 4  总结与展望
