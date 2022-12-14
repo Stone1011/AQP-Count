@@ -77,7 +77,7 @@ X_train, X_validation, Y_train, Y_validation = train_test_split(x, logY, test_si
 # model.fit(X_train, Y_train)
 
 # Model with best parameters
-model = XGBRegressor(n_estimators=457, learning_rate=0.18, max_depth=5, gamma=0.2)
+model = XGBRegressor(n_estimators=577, learning_rate=0.11, max_depth=5, min_child_weight=4, scale_pos_weight = 10, base_score = 50)
 model.fit(X_train, Y_train)
 
 # Predict
