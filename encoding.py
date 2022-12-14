@@ -116,7 +116,7 @@ def generateOneX(sigmaConn, sigmaCond, sigmaTable, query):
     """
     tables = [0 for i in range(len(sigmaTable.keys()))]
     connections = [0 for i in range(len(sigmaConn.keys()))]
-    conditions = [0 for i in range(len(sigmaCond.keys()))]
+    conditions = [(0 if i.split('_')[-1] == 'lb' else 1) for i in sigmaCond.keys()]
 
     for tab in query.tables.keys():
         tables[sigmaTable[tab]] = 1
