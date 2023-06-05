@@ -2,7 +2,7 @@
 
 # Completed by Yifan SHI & Yichen XU
 
-## 1 Experimental Overview
+## 1 Overview
 
 ### 1.1 Task Requirements
 
